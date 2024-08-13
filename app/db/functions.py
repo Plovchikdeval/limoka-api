@@ -96,9 +96,21 @@ class Module(models.Module):
             return await cls.get(id=module_id)
         except DoesNotExist:
             return None
+        
+    @classmethod
+    async def get_dict_by_name(cls, module_name: str) -> Union[dict, None]:
+        """
+        Get module by name.
+        :param module_name: Module name.
+        :return: Module dict.
+        """
+        try:
+            return await cls.get(name=module_name)
+        except DoesNotExist:
+            return None
 
     @classmethod
-    async def create_module(cls, name: str, description: str, developer: int, hash: str, git: str, image: str, commands: list, code: str) -> dict:
+    async def create_module(cls, name: str, description: str, developer: int, hash: str, git: str, image: str, banner: str, commands: list, code: str) -> dict:
         """
         Create module.
         :param name: Name.
@@ -111,7 +123,7 @@ class Module(models.Module):
         :param code: Code.
         :return: Module dict.
         """
-        module = await cls.create(name=name, description=description, developer=developer, hash=hash, git=git, image=image, commands=commands, downloads=[], looks=[], code=code)
+        module = await cls.create(name=name, description=description, developer=developer, hash=hash, git=git, image=image, banner=banner, commands=commands, downloads=[], looks=[], code=code)
         return module
 
     @classmethod
@@ -161,7 +173,16 @@ class Module(models.Module):
         :return: All modules.
         """
         # all modules without code
-        return await cls.all().values("id", "name", "description", "developer", "hash", "git", "image", "commands", "downloads", "looks")
+        return await cls.all().values("id", "name", "description", "developer", "hash", "git", "image", "banner", "commands", "downloads", "looks")
+    
+    @classmethod
+    async def get_modules_by_developer(cls, developer: int):
+        """
+        Get modules by developer.
+        :param developer: Developer id.
+        :return: Modules by developer.
+        """
+        return await cls.filter(developer=developer)
 
     @classmethod
     async def get_raw_module(cls, developer: int, module_name: str):
@@ -177,3 +198,62 @@ class Module(models.Module):
             return
 
         return module.code
+
+
+class Updates(models.Updates):
+    """
+    Updates model, contains all methods for working with updates.
+    """
+    @classmethod
+    async def get_dict_unapproved(cls) -> Union[dict, None]:
+        """
+        Get unapproved update.
+        :return: Update dict.
+        """
+        try:
+            return await cls.all().filter(approved=False)
+        except DoesNotExist:
+            return None
+
+    @classmethod
+    async def get_dict(cls, update_id: int) -> Union[dict, None]:
+        """
+        Get update by id.
+        :param update_id: Update id.
+        :return: Update dict.
+        """
+        try:
+            return await cls.get(id=update_id)
+        except DoesNotExist:
+            return None
+
+    @classmethod
+    async def create_update(cls, name: str, description: str, developer: str, git: str, image: str, banner: str, commands: list, new_code: str) -> dict:
+        """
+        Create update.
+        :param name: Name.
+        :param description: Description.
+        :param developer: Developer.
+        :param git: Git.
+        :param image: Image.
+        :param banner: Banner.
+        :param commands: Commands.
+        :param new_code: New code.
+        :return: Update dict.
+        """
+        update = await cls.create(name=name, description=description, developer=developer, git=git, image=image, banner=banner, commands=commands, new_code=new_code, approved=False)
+        return update    
+
+    @classmethod
+    async def approve_update(cls, update_id: int):
+        """
+        Approve update.
+        :param update_id: Update id.
+        """
+        update = await cls.get_dict(update_id)
+
+        if update is None:
+            return
+
+        update.approved = True
+        await update.save()

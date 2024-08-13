@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, Response
 from app.protect import verify_token_main
+from app.utils.parser import get_git_modules, get_module, get_module_info
 
-from app.db.functions import Module, Developer
+from app.db.functions import Module, Developer, Updates
+from app.utils.diff import get_diff
 
 router = APIRouter()
 
@@ -13,7 +15,7 @@ async def get_modules():
 
 
 @router.get("/{module_id}")
-async def get_module(module_id: int):
+async def get_module_dict(module_id: int):
     module = await Module.get_dict(module_id=module_id)
     return module
 
@@ -37,3 +39,78 @@ async def look_module(module_id: int, user_id: int):
 async def download_module(module_id: int, user_id: int):
     module = await Module.add_download(module_id=module_id, user_id=user_id)
     return module
+
+
+@router.get("/check_updates/", dependencies=[Depends(verify_token_main)])
+async def check_updates():
+    all_developers = await Developer.all()
+
+    for developer in all_developers:
+        modules_in_db = await Module.get_modules_by_developer(developer.telegram_id)
+        modules_in_git = get_git_modules(developer.git)
+
+        for module in modules_in_git:
+            code = get_module(module, developer.git)
+            info = get_module_info(code)
+
+            if module not in modules_in_db:
+                await Updates.create_update(
+                    name=module,
+                    description=info["description"],
+                    developer=developer.username,
+                    git=developer.git,
+                    image=info["pic"],
+                    banner=info["banner"],
+                    commands=info["commands"],
+                    new_code=code
+                )
+
+            if module in modules_in_db:
+                if hash(get_module(module, developer.git)) != modules_in_db[module]["hash"]:
+                    code = get_module(module, developer.git)
+                    await Updates.create_update(
+                        name=module,
+                        description=info["description"],
+                        developer=developer.username,
+                        git=developer.git,
+                        image=info["pic"],
+                        banner=info["banner"],
+                        commands=info["commands"],
+                        new_code=code
+                    )
+
+    return {"status": "ok"}
+
+
+@router.get("/approve_update/{update_id}", dependencies=[Depends(verify_token_main)])
+async def approve_update(update_id: int):
+    update = await Updates.get_dict(update_id)
+    if update is None:
+        return {"error": "Update not found."}
+    await Updates.approve_update(update_id)
+    await Module.create_module(
+        update.name,
+        update.description,
+        update.developer,
+        hash(update.new_code),
+        update.git + update.name + ".py",
+        update.image,
+        update.banner,
+        update.commands,
+        update.new_code
+    )
+    return {"status": "ok"}
+
+
+@router.get("/get_unapproved_updates/", dependencies=[Depends(verify_token_main)])
+async def get_unapproved_updates():
+    updates = await Updates.get_dict_unapproved()
+
+    for update in updates:
+        module = await Module.get_dict_by_name(update.name)
+        if module is None:
+            update["diff"] = "New module."
+            continue
+        update["diff"] = get_diff(module["code"], update["new_code"])
+
+    return updates

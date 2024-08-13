@@ -1,11 +1,10 @@
 import asyncio
 import logging
-import git
 import uvicorn
 
 import coloredlogs
 
-from app import db, version
+from app import db
 from app.arguments import parse_arguments
 from app.config import Config, parse_config
 from app.db import close_orm, init_orm
@@ -20,10 +19,6 @@ async def on_startup(
 ):
     tortoise_config = config.database.get_tortoise_config()
     await init_orm(tortoise_config)
-
-    logging.info(f"Build: {kwargs['build']}")
-    logging.info(f"Update: {kwargs['upd']}")
-    logging.info(f"Started at: {kwargs['start_time']}")
 
     web_config = config.web.get_config()
 
@@ -54,14 +49,9 @@ async def main():
     except FileExistsError:
         await db.migrate_models(tortoise_config)
 
-    repo = git.Repo()
-    build = repo.heads[0].commit.hexsha
-    diff = repo.git.log([f"HEAD..origin/{version.branch}", "--oneline"])
-    upd = "Update required" if diff else "Up-to-date"
-
     start_time = datetime.now()
 
-    context_kwargs = {"build": build, "upd": upd, "start_time": start_time}
+    context_kwargs = {"start_time": start_time}
 
     disp = dispatcher(context_kwargs)
 

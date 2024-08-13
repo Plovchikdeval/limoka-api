@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from app.version import branch, get_info
 from app.handlers import router as handlers_router
 
 
@@ -8,11 +9,7 @@ def dispatcher(context):
 
     @app.get("/")
     async def root():
-        return {
-            "name": "limoka",
-            "upd": context["upd"],
-            "build": context["build"],
-            "start_time": context["start_time"],
-        }
+        git_info = get_info(branch)
+        return {"name": "limoka", "start_time": context["start_time"], **git_info}
 
     return app
