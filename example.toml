@@ -1,0 +1,9 @@
+[web]
+host = "0.0.0.0"
+port = 8000
+
+[database]
+models = ["app.db.functions", "aerich.models"]
+
+[token]
+main = "TOKEN FOR ADMIN API REQUESTS"
