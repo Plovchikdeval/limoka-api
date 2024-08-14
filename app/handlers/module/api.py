@@ -46,14 +46,16 @@ async def check_updates():
     all_developers = await Developer.all()
 
     for developer in all_developers:
-        modules_in_db = await Module.get_modules_by_developer(developer.telegram_id)
+        #modules_in_db = await Module.get_modules_by_developer(developer.telegram_id)
+        modules_in_db = [module.name for module in await Module.get_modules_by_developer(developer.telegram_id)]
+        unapproved_updates = [update.name for update in await Updates.get_dict_unapproved()]
         modules_in_git = get_git_modules(developer.git)
 
         for module in modules_in_git:
             code = get_module(module, developer.git)
             info = get_module_info(code)
 
-            if module not in modules_in_db:
+            if module not in modules_in_db and module not in unapproved_updates:
                 await Updates.create_update(
                     name=module,
                     description=info["description"],
@@ -64,9 +66,11 @@ async def check_updates():
                     commands=info["commands"],
                     new_code=code
                 )
+                continue
 
             if module in modules_in_db:
-                if hash(get_module(module, developer.git)) != modules_in_db[module]["hash"]:
+                module_db = await Module.get_dict_by_name(module)
+                if hash(get_module(module, developer.git)) != module_db.hash:
                     code = get_module(module, developer.git)
                     await Updates.create_update(
                         name=module,
