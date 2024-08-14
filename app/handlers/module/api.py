@@ -3,7 +3,7 @@ from app.protect import verify_token_main
 from app.utils.parser import get_git_modules, get_module, get_module_info
 
 from app.db.functions import Module, Developer, Updates
-from app.utils.diff import get_diff
+from app.utils.diff import get_diff, get_html_diff
 
 router = APIRouter()
 
@@ -88,12 +88,17 @@ async def approve_update(update_id: int):
     if update is None:
         return {"error": "Update not found."}
     await Updates.approve_update(update_id)
+    link = ""
+    if update.git.endswith("/"):
+        link = update.git + update.name + ".py"
+    else:
+        link = update.git + "/" + update.name + ".py"
     await Module.create_module(
         update.name,
         update.description,
         update.developer,
         hash(update.new_code),
-        update.git + update.name + ".py",
+        link,
         update.image,
         update.banner,
         update.commands,
@@ -105,12 +110,21 @@ async def approve_update(update_id: int):
 @router.get("/get_unapproved_updates/", dependencies=[Depends(verify_token_main)])
 async def get_unapproved_updates():
     updates = await Updates.get_dict_unapproved()
-
-    for update in updates:
-        module = await Module.get_dict_by_name(update.name)
-        if module is None:
-            update["diff"] = "New module."
-            continue
-        update["diff"] = get_diff(module["code"], update["new_code"])
-
     return updates
+
+
+@router.get("/get_diff/{update_id}")
+async def get_diff_update(update_id: int):
+    update = await Updates.get_dict(update_id)
+    if update is None:
+        return {"error": "Update not found."}
+
+    module = await Module.get_dict_by_name(update.name)
+    code = ""
+    if module is not None:
+        code = module["code"]
+
+    # return get_html_diff(code, update.new_code)
+    return Response(
+        content=get_html_diff(code, update.new_code), media_type="text/html"
+    )
