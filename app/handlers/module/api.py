@@ -25,7 +25,7 @@ async def get_raw_module(developer_username: str, module_name: str):
     developer = await Developer.get_dict_by_username(developer_username)
     if developer is None:
         return {"error": "Developer not found."}
-    module = await Module.get_raw_module(developer.telegram_id, module_name)
+    module = await Module.get_raw_module(developer_username, module_name)
     return Response(content=module, media_type="text/plain")
 
 
