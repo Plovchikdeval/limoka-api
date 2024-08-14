@@ -117,8 +117,8 @@ async def get_unapproved_updates():
     return updates
 
 
-@router.get("/get_diff/{update_id}")
-async def get_diff_update(update_id: int):
+@router.get("/get_diff/{update_id}/{type}")
+async def get_diff_update(update_id: int, type: str):
     update = await Updates.get_dict(update_id)
     if update is None:
         return {"error": "Update not found."}
@@ -128,7 +128,10 @@ async def get_diff_update(update_id: int):
     if module is not None:
         code = module.code
 
-    # return get_html_diff(code, update.new_code)
+    if type == "html":
+        return Response(
+            content=get_html_diff(code, update.new_code), media_type="text/html"
+        )
     return Response(
-        content=get_html_diff(code, update.new_code), media_type="text/html"
+        content=get_diff(code, update.new_code), media_type="text/plain"
     )
