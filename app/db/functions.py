@@ -96,7 +96,7 @@ class Module(models.Module):
             return await cls.get(id=module_id)
         except DoesNotExist:
             return None
-        
+
     @classmethod
     async def get_dict_by_name(cls, module_name: str) -> Union[dict, None]:
         """
@@ -174,7 +174,7 @@ class Module(models.Module):
         """
         # all modules without code
         return await cls.all().values("id", "name", "description", "developer", "hash", "git", "image", "banner", "commands", "downloads", "looks")
-    
+
     @classmethod
     async def get_modules_by_developer(cls, developer: int):
         """
@@ -192,12 +192,10 @@ class Module(models.Module):
         :param module_name: Module name.
         :return: Raw module.
         """
-        module = await cls.get(developer=developer, name=module_name)
-
-        if module is None:
-            return
-
-        return module.code
+        try:
+            return (await cls.get(developer=developer, name=module_name)).code
+        except DoesNotExist:
+            return ""
 
 
 class Updates(models.Updates):
