@@ -122,7 +122,7 @@ async def get_diff_update(update_id: int):
     module = await Module.get_dict_by_name(update.name)
     code = ""
     if module is not None:
-        code = module["code"]
+        code = module.code
 
     # return get_html_diff(code, update.new_code)
     return Response(
