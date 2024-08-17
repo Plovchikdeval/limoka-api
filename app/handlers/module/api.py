@@ -17,15 +17,35 @@ async def get_modules():
 @router.get("/{module_id}")
 async def get_module_dict(module_id: int):
     module = await Module.get_dict(module_id=module_id)
-    return module
+    return {
+        "id": module.id,
+        "name": module.name,
+        "description": module.description,
+        "developer": module.developer,
+        "hash": module.hash,
+        "image": module.image,
+        "banner": module.banner,
+        "commands": module.commands,
+        "downloads": len(module.downloads),
+        "looks": len(module.looks)
+    }
 
 
-@router.get("/{developer_username}/{module_name}.py")
-async def get_raw_module(developer_username: str, module_name: str):
-    developer = await Developer.get_dict_by_username(developer_username)
-    if developer is None:
-        return {"error": "Developer not found."}
-    module = await Module.get_raw_module(developer_username, module_name)
+# @router.get("/{developer_username}/{module_name}.py")
+# async def get_raw_module(developer_username: str, module_name: str):
+#     developer = await Developer.get_dict_by_username(developer_username)
+#     if developer is None:
+#         return {"error": "Developer not found."}
+#     module = await Module.get_raw_module(developer_username, module_name)
+#     return Response(content=module, media_type="text/plain")
+
+
+@router.get("/download/{module_id}")
+async def get_raw_module(module_id: int):
+    module = await Module.get_dict(module_id=module_id)
+    if module is None:
+        return {"error": "Module not found."}
+    module = module.code
     return Response(content=module, media_type="text/plain")
 
 
