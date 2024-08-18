@@ -79,6 +79,8 @@ async def check_updates():
                 print(e)
                 continue
 
+            print(info)
+
             if module not in modules_in_db and module not in unapproved_updates:
                 await Updates.create_update(
                     name=module,
