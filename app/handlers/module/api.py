@@ -66,7 +66,7 @@ async def check_updates():
     all_developers = await Developer.all()
 
     for developer in all_developers:
-        #modules_in_db = await Module.get_modules_by_developer(developer.telegram_id)
+        # modules_in_db = await Module.get_modules_by_developer(developer.telegram_id)
         modules_in_db = [module.name for module in await Module.get_modules_by_developer(developer.telegram_id)]
         unapproved_updates = [update.name for update in await Updates.get_dict_unapproved()]
         modules_in_git = get_git_modules(developer.git)
@@ -85,8 +85,8 @@ async def check_updates():
                     description=info["description"],
                     developer=developer.username,
                     git=developer.git,
-                    image=info["pic"],
-                    banner=info["banner"],
+                    image=info["meta"]["pic"],
+                    banner=info["meta"]["banner"],
                     commands=info["commands"],
                     new_code=code
                 )
@@ -101,10 +101,10 @@ async def check_updates():
                         description=info["description"],
                         developer=developer.username,
                         git=developer.git,
-                        image=info["pic"],
-                        banner=info["banner"],
+                        image=info["meta"]["pic"],
+                        banner=info["meta"]["banner"],
                         commands=info["commands"],
-                        new_code=code
+                        new_code=code,
                     )
 
     return {"status": "ok"}

@@ -1,3 +1,4 @@
+import ast
 import requests
 
 
@@ -35,84 +36,66 @@ def get_module(module_name: str, git: str):
         return []
 
 
-def get_module_info(code: str):
-    commands = []
-    pic = None
-    banner = None
-    description = None
-
-    last_line = None
-
-    desc_parser_active = False
-    for line in code.split("\n"):
+def get_module_info(module_content):
+    meta_info = {}
+    # Извлечение мета-информации из комментариев
+    for line in module_content.split("\n"):
+        # Если строка начинается с "# meta", то это мета-информация
         if line.startswith("# meta"):
-            line = line.replace("# meta", "").strip()
-            key, value = line.split(":", 1)
-            value = value.strip()
+            # Извлечение ключа и значения
+            key, value = line.replace("# meta ", "").split(": ")
+            meta_info[key] = value
 
-            if key == "pic":
-                pic = value
-            elif key == "banner":
-                banner = value
-            elif key == "description":
-                description = value
+    # Парсинг файла в абстрактное синтаксическое дерево
+    tree = ast.parse(module_content)
 
-        line = " ".join(line.split())
+    def get_decorator_names(decorator_list):
+        """Извлечение имен декораторов из списка."""
+        return [ast.unparse(decorator) for decorator in decorator_list]
 
-        if "async def" in line and "cmd" in line or "class" in line and "Mod" in line:
-            desc_parser_active = True
-            if "async def" in line:
-                commands.append(
-                    {
-                        "command": line.split("async def ")[1].split("cmd")[0],
-                        "description": None,
-                    }
-                )
-            continue
+    result = {}
+    # Проход по всем узлам дерева
+    for node in ast.walk(tree):
+        # Если узел - это определение класса
+        if isinstance(node, ast.ClassDef):
+            # Если не Mod, то пропускаем
+            if "Mod" not in node.name:
+                continue
 
-        if desc_parser_active and "#" in line:
-            if commands:
-                commands[-1]["description"] = line.split("#")[1].strip()
-            else:
-                description = line.split("#")[1].strip()
-            desc_parser_active = False
+            # Извлечение докстринга класса
+            class_docstring = ast.get_docstring(node)
 
-        if "\"\"\"" in line:
-            text = None
-            if description:
-                if description.replace("\n", "") == "":
-                    description = ""
-            check = commands[-1]["description"] if commands else description
-            if line.count("\"\"\"") == 2:
-                text = line.replace("\"\"\"", "")
-                desc_parser_active = False
-            else:
-                if check and '"""' in line:
-                    desc_parser_active = False
+            # Подготовка записи для класса
+            class_info = {
+                "name": node.name,
+                "description": class_docstring,
+                "meta": meta_info,
+                "commands": [],
+            }
 
-            if commands:
-                commands[-1]["description"] = f"{commands[-1]['description'] if commands[-1]['description'] else ''}{text if text else ''}\n"
-            else:
-                description = f"{description if description else ''}{text if text else ''}\n"
+            # Проход по элементам класса (методам и атрибутам)
+            for class_body_node in node.body:
+                # Если узел - это обычная функция или асинхронная функция
+                if isinstance(class_body_node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    # Извлечение декораторов
+                    decorators = get_decorator_names(class_body_node.decorator_list)
 
-        elif "\"\"\"" not in line and desc_parser_active:
-            last = commands[-1]["description"] if commands else description
-            text = f"{last if last else ''}\n{line}"
-            if commands:
-                commands[-1]["description"] = text if text else ""
-            else:
-                description = text if text else ""
+                    # Если у функции нет декоратора loader.command или cmd в названии, то пропускаем
+                    is_loader_command = [
+                        decorator for decorator in decorators if "command" in decorator
+                    ]
+                    if not is_loader_command and "cmd" not in class_body_node.name:
+                        continue
 
-    while description and description.startswith("\n"):
-        description = description[1:]
+                    # Извлечение докстринга метода
+                    method_docstring = ast.get_docstring(class_body_node)
 
-    for command in commands:
-        while command["description"] and command["description"].startswith("\n"):
-            command["description"] = command["description"][1:]
+                    # Добавление информации о методе
+                    class_info["commands"].append(
+                        {class_body_node.name: method_docstring}
+                    )
 
-    return {
-        "pic": pic,
-        "banner": banner,
-        "description": description,
-        "commands": commands
-    }
+            # Записываем результат
+            result = class_info
+
+    return result
