@@ -33,7 +33,7 @@ def get_module(module_name: str, git: str):
     if req.status_code == 200:
         return req.text
     else:
-        print(f"Error: {req.status_code}")
+        print(f"Error: {req.status_code} on {git}/{module_name}.py")
         print(req.text)
         return ""
 
