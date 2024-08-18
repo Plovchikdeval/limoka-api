@@ -8,6 +8,16 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
+@router.get("/all")
+async def get_developers():
+    """
+    Get all developers.
+    :return: All developers.
+    """
+    developers = await Developer.get_all()
+    return developers
+
+
 @router.get("/{developer_telegram_id}")
 async def get_developer(developer_telegram_id: int):
     """

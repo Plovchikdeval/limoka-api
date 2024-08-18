@@ -88,6 +88,15 @@ class Developer(models.Developer):
         """
         developer = await cls.create(telegram_id=telegram_id, username=username, git=git, is_verified=False)
         return developer
+    
+    @classmethod
+    async def get_all(cls) -> list:
+        """
+        Get all developers.
+        :return: All developers.
+        """
+        developers = await cls.all()
+        return developers
 
 
 class Module(models.Module):
