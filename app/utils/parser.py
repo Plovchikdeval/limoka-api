@@ -52,7 +52,11 @@ def get_module_info(module_content):
         # Если узел - это определение класса
         if isinstance(node, ast.ClassDef):
             # Если не Mod, то пропускаем
-            if "Mod" not in node.name:
+            decorators = get_decorator_names(node.decorator_list)
+            is_tds_mod = [
+                decorator for decorator in decorators if "loader.tds" in decorator
+            ]
+            if "Mod" not in node.name and not is_tds_mod:
                 continue
 
             # Извлечение докстринга класса
@@ -92,3 +96,13 @@ def get_module_info(module_content):
             result = class_info
 
     return result
+
+
+if __name__ == "__main__":
+    print(
+        get_module_info(
+            requests.get(
+                "https://raw.githubusercontent.com/MuRuLOSE/HikkaModulesRepo/main/youtubesearcher.py"
+            ).text
+        )
+    )
