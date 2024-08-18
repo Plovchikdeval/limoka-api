@@ -123,6 +123,19 @@ class Module(models.Module):
         :param code: Code.
         :return: Module dict.
         """
+        if await cls.get_dict_by_name(name) is not None:
+            # update module
+            module = await cls.get_dict_by_name(name)
+            module.description = description
+            module.developer = developer
+            module.hash = hash
+            module.git = git
+            module.image = image
+            module.banner = banner
+            module.commands = commands
+            module.code = code
+            await module.save()
+            return module
         module = await cls.create(name=name, description=description, developer=developer, hash=hash, git=git, image=image, banner=banner, commands=commands, downloads=[], looks=[], code=code)
         return module
 
@@ -214,6 +227,17 @@ class Updates(models.Updates):
             return None
 
     @classmethod
+    async def get_dict_all(cls) -> Union[dict, None]:
+        """
+        Get all updates.
+        :return: Update dict.
+        """
+        try:
+            return await cls.all()
+        except DoesNotExist:
+            return None
+
+    @classmethod
     async def get_dict(cls, update_id: int) -> Union[dict, None]:
         """
         Get update by id.
@@ -222,6 +246,18 @@ class Updates(models.Updates):
         """
         try:
             return await cls.get(id=update_id)
+        except DoesNotExist:
+            return None
+        
+    @classmethod
+    async def get_dict_by_name(cls, name: str) -> Union[dict, None]:
+        """
+        Get update by name.
+        :param name: Name.
+        :return: Update dict.
+        """
+        try:
+            return await cls.get(name=name)
         except DoesNotExist:
             return None
 
@@ -239,6 +275,10 @@ class Updates(models.Updates):
         :param new_code: New code.
         :return: Update dict.
         """
+        if await cls.get_dict_by_name(name) is not None:
+            # remove old update
+            update = await cls.get_dict_by_name(name)
+            await update.delete()
         update = await cls.create(name=name, description=description, developer=developer, git=git, image=image, banner=banner, commands=commands, new_code=new_code, approved=False)
         return update    
 

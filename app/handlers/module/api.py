@@ -73,7 +73,11 @@ async def check_updates():
 
         for module in modules_in_git:
             code = get_module(module, developer.git)
-            info = get_module_info(code)
+            try:
+                info = get_module_info(code)
+            except Exception as e:
+                print(e)
+                continue
 
             if module not in modules_in_db and module not in unapproved_updates:
                 await Updates.create_update(
@@ -90,8 +94,8 @@ async def check_updates():
 
             if module in modules_in_db:
                 module_db = await Module.get_dict_by_name(module)
-                if hash(get_module(module, developer.git)) != module_db.hash:
-                    code = get_module(module, developer.git)
+                code = get_module(module, developer.git)
+                if code != module_db.code:
                     await Updates.create_update(
                         name=module,
                         description=info["description"],
