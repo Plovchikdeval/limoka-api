@@ -6,12 +6,10 @@ def get_githubusercontent(git: str):
     # https://raw.githubusercontent.com/vsecoder/hikka_modules/main/full.txt
     if git.startswith("https://github.com/"):
         git = git.replace("https://github.com/", "https://raw.githubusercontent.com/")
-
     if git.endswith("/"):
         git += "main"
     else:
         git += "/main"
-
     return git
 
 def get_git_modules(git: str):
@@ -26,14 +24,10 @@ def get_git_modules(git: str):
 
 
 def get_module(module_name: str, git: str):
-    try:
-        git = get_githubusercontent(git)
-        req = requests.get(f"{git}/{module_name}.py")
-        return req.text
-    except Exception as e:
-        print(e)
-        return ""
-
+    git = get_githubusercontent(git)
+    module_name = module_name.replace("\r", "")
+    req = requests.get(f"{git}/{module_name}.py")
+    return req.text
 
 def get_module_info(module_content):
     meta_info = {"pic": None, "banner": None}

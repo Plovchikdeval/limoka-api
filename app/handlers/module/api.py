@@ -72,8 +72,10 @@ async def check_updates():
         modules_in_git = get_git_modules(developer.git)
 
         for module in modules_in_git:
-            code = get_module(module, developer.git)
+            if module == "":
+                continue
             try:
+                code = get_module(module, developer.git)
                 info = get_module_info(code)
             except Exception as e:
                 print(e)
