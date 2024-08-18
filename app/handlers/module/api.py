@@ -5,7 +5,11 @@ from app.utils.parser import get_git_modules, get_module, get_module_info
 from app.db.functions import Module, Developer, Updates
 from app.utils.diff import get_diff, get_html_diff
 
+from hashlib import sha256
+import logging
+
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/all")
@@ -64,10 +68,9 @@ async def download_module(module_id: int, user_id: int):
 @router.get("/check_updates/", dependencies=[Depends(verify_token_main)])
 async def check_updates():
     all_developers = await Developer.all()
+    modules_in_db = [module.name for module in await Module.all()]
 
     for developer in all_developers:
-        # modules_in_db = await Module.get_modules_by_developer(developer.telegram_id)
-        modules_in_db = [module.name for module in await Module.get_modules_by_developer(developer.telegram_id)]
         unapproved_updates = [update.name for update in await Updates.get_dict_unapproved()]
         modules_in_git = get_git_modules(developer.git)
 
@@ -78,29 +81,17 @@ async def check_updates():
                 code = get_module(module, developer.git)
                 info = get_module_info(code)
             except Exception as e:
-                print(e)
+                logger.error(f"Error while getting module info: {e}")
                 continue
 
             if not info:
                 continue
 
-            if module not in modules_in_db and module not in unapproved_updates:
-                await Updates.create_update(
-                    name=module,
-                    description=info["description"],
-                    developer=developer.username,
-                    git=developer.git,
-                    image=info["meta"]["pic"],
-                    banner=info["meta"]["banner"],
-                    commands=info["commands"],
-                    new_code=code
-                )
-                continue
-
             if module in modules_in_db:
                 module_db = await Module.get_dict_by_name(module)
                 code = get_module(module, developer.git)
-                if code != module_db.code:
+                if sha256(code.encode()).hexdigest() != module_db.hash:
+                    logger.info(f"Update for {module} found.")
                     await Updates.create_update(
                         name=module,
                         description=info["description"],
@@ -111,6 +102,24 @@ async def check_updates():
                         commands=info["commands"],
                         new_code=code,
                     )
+                else:
+                    logger.info(f"No updates for {module}.")
+            else:
+                if module not in unapproved_updates:
+                    logger.info(f"New module {module} found.")
+                else:
+                    logger.info(f"New module {module} found, but it's already in unapproved updates.")
+
+                await Updates.create_update(
+                    name=module,
+                    description=info["description"],
+                    developer=developer.username,
+                    git=developer.git,
+                    image=info["meta"]["pic"],
+                    banner=info["meta"]["banner"],
+                    commands=info["commands"],
+                    new_code=code,
+                )
 
     return {"status": "ok"}
 
@@ -130,7 +139,7 @@ async def approve_update(update_id: int):
         update.name,
         update.description,
         update.developer,
-        hash(update.new_code),
+        sha256(update.new_code.encode()).hexdigest(),
         link,
         update.image,
         update.banner,
