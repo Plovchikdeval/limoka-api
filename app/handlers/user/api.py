@@ -6,6 +6,12 @@ from app.db.functions import User
 router = APIRouter()
 
 
+@router.get("/all", dependencies=[Depends(verify_token_main)])
+async def get_all_users():
+    users = await User.get_all()
+    return users
+
+
 @router.get("/count")
 async def get_count():
     count = await User.get_count()

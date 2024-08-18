@@ -20,7 +20,7 @@ class User(models.User):
             return await cls.get(telegram_id=tg_id)
         except DoesNotExist:
             return None
-        
+
     @classmethod
     async def create_user(cls, telegram_id: int) -> dict:
         """
@@ -30,7 +30,7 @@ class User(models.User):
         """
         user = await cls.create(telegram_id=telegram_id)
         return user
-    
+
     @classmethod
     async def get_count(cls) -> int:
         """
@@ -38,6 +38,15 @@ class User(models.User):
         :return: Count of users.
         """
         return await cls.all().count()
+
+    @classmethod
+    async def get_all(cls) -> list:
+        """
+        Get all users.
+        :return: All users.
+        """
+        users = await cls.all().values("telegram_id")
+        return [user["telegram_id"] for user in users]
 
 
 class Developer(models.Developer):
