@@ -26,15 +26,12 @@ def get_git_modules(git: str):
 
 
 def get_module(module_name: str, git: str):
-    git = get_githubusercontent(git)
-
-    req = requests.get(f"{git}/{module_name}.py")
-
-    if req.status_code == 200:
+    try:
+        git = get_githubusercontent(git)
+        req = requests.get(f"{git}/{module_name}.py")
         return req.text
-    else:
-        print(f"Error: {req.status_code} on {git}/{module_name}.py")
-        print(req.text)
+    except Exception as e:
+        print(e)
         return ""
 
 
