@@ -37,7 +37,7 @@ def get_module(module_name: str, git: str):
 
 
 def get_module_info(module_content):
-    meta_info = {}
+    meta_info = {"pic": None, "banner": None}
     # Извлечение мета-информации из комментариев
     for line in module_content.split("\n"):
         # Если строка начинается с "# meta", то это мета-информация

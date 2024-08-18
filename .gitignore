@@ -2,3 +2,4 @@ production-*
 config.toml
 migrations/
 __pycache__/
+test.py
