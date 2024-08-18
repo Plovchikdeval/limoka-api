@@ -33,7 +33,8 @@ def get_module(module_name: str, git: str):
     if req.status_code == 200:
         return req.text
     else:
-        return []
+        print(git)
+        return ""
 
 
 def get_module_info(module_content):
