@@ -74,6 +74,9 @@ async def check_updates():
         unapproved_updates = [update.name for update in await Updates.get_dict_unapproved()]
         modules_in_git = get_git_modules(developer.git)
 
+        if not hasattr(modules_in_git, "__iter__"):
+            continue
+
         for module in modules_in_git:
             if module == "":
                 continue
