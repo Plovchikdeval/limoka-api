@@ -25,11 +25,6 @@ class Module(Model):
     banner = fields.CharField(max_length=525, null=True)
     commands = fields.JSONField(null=True)
     # [ { "command": "description" } ]
-
-    downloads = fields.JSONField()
-    looks = fields.JSONField()
-    # list of user ids
-
     code = fields.TextField(null=True)
 
 class Updates(Model):

@@ -99,10 +99,11 @@ def get_module_info(module_content):
 
 
 if __name__ == "__main__":
-    print(
+    import json
+    print(json.dumps(
         get_module_info(
             requests.get(
-                "https://raw.githubusercontent.com/MuRuLOSE/HikkaModulesRepo/main/youtubesearcher.py"
+                "https://raw.githubusercontent.com/vsecoder/hikka_modules/main/quotes.py"
             ).text
         )
-    )
+    ))

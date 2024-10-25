@@ -154,48 +154,8 @@ class Module(models.Module):
             module.code = code
             await module.save()
             return module
-        module = await cls.create(name=name, description=description, developer=developer, hash=hash, git=git, image=image, banner=banner, commands=commands, downloads=[], looks=[], code=code)
+        module = await cls.create(name=name, description=description, developer=developer, hash=hash, git=git, image=image, banner=banner, commands=commands, code=code)
         return module
-
-    @classmethod
-    async def add_download(cls, user_id: int, module_id: int):
-        """
-        Add download.
-        :param user_id: User id.
-        :param module_id: Module id.
-        """
-        module = await cls.get_dict(module_id)
-
-        if module is None:
-            return
-
-        if user_id not in module.downloads:
-            module.downloads.append(user_id)
-            await module.save()
-
-    @classmethod
-    async def add_look(cls, user_id: int, module_id: int):
-        """
-        Add look.
-        :param user_id: User id.
-        :param module_id: Module id.
-        """
-        module = await cls.get_dict(module_id)
-
-        if module is None:
-            return
-
-        if user_id not in module.looks:
-            module.looks.append(user_id)
-            await module.save()
-
-    @classmethod
-    async def get_top(cls):
-        """
-        Get top modules.
-        :return: Top modules.
-        """
-        return await cls.all().order_by("-downloads").limit(10)
 
     @classmethod
     async def get_all(cls):
@@ -204,7 +164,7 @@ class Module(models.Module):
         :return: All modules.
         """
         # all modules without code
-        return await cls.all().values("id", "name", "description", "developer", "hash", "git", "image", "banner", "commands", "downloads", "looks")
+        return await cls.all().values("id", "name", "description", "developer", "hash", "git", "image", "banner", "commands")
 
     @classmethod
     async def get_modules_by_developer(cls, developer: int):

@@ -30,18 +30,16 @@ async def get_module_dict(module_id: int):
         "image": module.image,
         "banner": module.banner,
         "commands": module.commands,
-        "downloads": len(module.downloads),
-        "looks": len(module.looks)
     }
 
 
-# @router.get("/{developer_username}/{module_name}.py")
-# async def get_raw_module(developer_username: str, module_name: str):
-#     developer = await Developer.get_dict_by_username(developer_username)
-#     if developer is None:
-#         return {"error": "Developer not found."}
-#     module = await Module.get_raw_module(developer_username, module_name)
-#     return Response(content=module, media_type="text/plain")
+@router.get("/{developer_username}/{module_name}.py")
+async def get_raw_module_by_full_link(developer_username: str, module_name: str):
+    developer = await Developer.get_dict_by_username(developer_username)
+    if developer is None:
+        return {"error": "Developer not found."}
+    module = await Module.get_raw_module(developer_username, module_name)
+    return Response(content=module, media_type="text/plain")
 
 
 @router.get("/download/{module_id}")
@@ -51,18 +49,6 @@ async def get_raw_module(module_id: int):
         return {"error": "Module not found."}
     module = module.code
     return Response(content=module, media_type="text/plain")
-
-
-@router.put("/look/{module_id}/{user_id}", dependencies=[Depends(verify_token_main)])
-async def look_module(module_id: int, user_id: int):
-    module = await Module.add_look(module_id=module_id, user_id=user_id)
-    return module
-
-
-@router.put("/download/{module_id}/{user_id}", dependencies=[Depends(verify_token_main)])
-async def download_module(module_id: int, user_id: int):
-    module = await Module.add_download(module_id=module_id, user_id=user_id)
-    return module
 
 
 @router.get("/check_updates/", dependencies=[Depends(verify_token_main)])
